@@ -3,7 +3,12 @@ import SavedModal from "@/pages/model/savedModal";
 import { useEffect, useState } from "react";
 import { CiBookmark } from "react-icons/ci";
 import { GoBookmarkFill } from "react-icons/go";
+import ReactPaginate from "react-paginate";
 import ApplyModal from "../pages/content";
+import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
+import Toast from "./SavedToast.jsx";
+import UnSaveToast from "./UnsaveToast";
+
 
 export default function Categories(props) {
   const [filteredData, setFilteredData] = useState([]);
@@ -12,6 +17,33 @@ export default function Categories(props) {
   const [isBookmarked, setBookmarks] = useState({});
   const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
   const { authState } = useAuth();
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 10;
+  const [toastMessage, setToastMessage] = useState("");
+  const [isToastVisible, setIsToastVisible] = useState(false);
+  const [isUnSaveToastVisible, setIsUnSaveToastVisible] = useState(false);
+  
+
+// Close the toast after a certain time
+useEffect(() => {
+  if (isToastVisible) {
+    const timer = setTimeout(() => {
+      setIsToastVisible(false);
+    }, 3000); // Adjust time as needed
+
+    return () => clearTimeout(timer);
+  }
+}, [isToastVisible]);
+
+// close the unsavetoast after a certain time
+useEffect(()=>{
+  if(isUnSaveToastVisible){
+    const timer = setTimeout(() => {
+      setIsUnSaveToastVisible(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }
+}), [isUnSaveToastVisible]
 
   // handling filtering functionality
   useEffect(() => {
@@ -201,6 +233,7 @@ export default function Categories(props) {
       // console.log("Unsave response:", result); // Log the response
       if (response.ok) {
         console.log(result);
+        setIsUnSaveToastVisible(true); // Show the toast
         return true;
       } else {
         console.error("Failed to unsave scheme");
@@ -221,18 +254,33 @@ export default function Categories(props) {
         success = await unsaveScheme(itemId);
       } else {
         success = await saveScheme(itemId);
+        setIsToastVisible(true); // Show the toast
       }
 
       if (success) {
+        // setIsToastVisible(true); // Show the toast
         setBookmarks((prevState) => ({
           ...prevState,
           [itemId]: !prevState[itemId], // Toggle the bookmark status for itemId
         }));
+        
       }
     } else {
       setIsSavedModalOpen(true); // Show saved modal if user is not logged in
     }
   };
+
+
+    // Handling pagination
+    const handlePageChange = ({ selected }) => {
+      setCurrentPage(selected);
+    };
+  
+    // Determining start and end pages
+    const offset = currentPage * itemsPerPage;
+    const currentPageData = filteredData.slice(offset, offset + itemsPerPage);
+    const pageCount = Math.ceil(filteredData.length / itemsPerPage);
+
 
   if (!props.data) {
     return (
@@ -251,13 +299,17 @@ export default function Categories(props) {
   }
 
   return (
+    <>
+    {/* We have found {378} schemes based on your profile */}
     <div>
-      {filteredData.map((item) => (
+      {currentPageData.map((item) => (
+        
         <div
           className="flex items-start justify-between self-stretch relative border-[1px] border-category-border rounded-[12px] mb-2 py-[16px] px-[16px] my-6 hover:bg-violet-100 gap-[20px]"
           key={item.id}
         >
-          <div>
+          
+          <div onClick={() => handleClick(item.id)}>
             <button
               className="text-center text-[12px] px-[8px] py-[6px] rounded-[4px] gap-[10px]"
               style={{ color: "#151280", backgroundColor: "#EEEEFF" }}
@@ -267,7 +319,7 @@ export default function Categories(props) {
             <div className="gap-[12px] pt-[16px] pd-[16px]">
               <p
                 className="font-inter text-[18px] leading-[21.6px] cursor-pointer font-bold mb-[10px] line-clamp-2 w-8/12"
-                onClick={() => handleClick(item.id)}
+              
                 role="button"
                 tabIndex="0"
               >
@@ -320,6 +372,35 @@ export default function Categories(props) {
           </div>
         </div>
       ))}
+
+
+<ReactPaginate
+  previousLabel={
+    <span className=" py-1 px-3 "><FaAngleLeft /></span>
+  }
+  nextLabel={
+    <span className="py-1 px-3 "><FaAngleRight /></span>
+  }
+  breakLabel={"..."}
+  breakClassName={"break-me"}
+  pageCount={pageCount}
+  marginPagesDisplayed={2}
+  pageRangeDisplayed={5}
+  onPageChange={handlePageChange}
+  containerClassName={"flex justify-center items-center space-x-[20px]"}
+  activeClassName={"flex justify-center items-center w-8  rounded-full bg-[#3431BB] text-white shadow-md pr-[2px] pl-[2px] pt-[4px] pb-[4px]"}
+  pageClassName={"flex items-center"}
+  pageLinkClassName={""}
+/>
+
+{isToastVisible && (
+        <Toast message={toastMessage} onClose={() => setIsToastVisible(false)} />
+      )}
+
+    {isUnSaveToastVisible && (
+        <UnSaveToast message={toastMessage} onClose={() => setIsUnSaveToastVisible(false)} />
+    )}
+
       {isModalOpen && selectedScheme && (
         <ApplyModal
           isOpen={isModalOpen}
@@ -334,5 +415,6 @@ export default function Categories(props) {
         />
       )}
     </div>
+    </>
   );
 }

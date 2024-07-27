@@ -9,7 +9,8 @@ export default function JobOpenings({ setData, ...props }) {
     const fetchJobOpenings = async () => {
       try {
         setData(null);
-        let url = `${process.env.NEXT_PUBLIC_API_BASE_URL}api/schemes`;
+        // let url = `http://65.0.103.91:80/api/schemes`;
+        let url = `${process.env.NEXT_PUBLIC_API_BASE_URL}api/schemes`
         if (searchQuery) {
           url += `/search/?q=${searchQuery}`;
           console.log("Search Query:", searchQuery); // Debugging log
@@ -41,6 +42,7 @@ export default function JobOpenings({ setData, ...props }) {
         selectedBeneficiaries={props.selectedBeneficiaries}
         selectedAges={props.selectedAges}
         selectedFunders={props.selectedFunders}
+        selectedSponsors={props.selectedSponsors}
       />
     </div>
   );
